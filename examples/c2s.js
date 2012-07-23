@@ -6,11 +6,11 @@ var xmpp = require('../lib/node-xmpp');
 // Sets up the server.
 var c2s = new xmpp.C2SServer({
     port: 5222,
-    domain: '0.0.0.0'//,
-    // tls: {
-    //     keyPath: './examples/localhost-key.pem',
-    //     certPath: './examples/localhost-cert.pem'
-    // }
+    domain: '0.0.0.0',
+    tls: {
+	     keyPath: 'kartik-private-key.pem',
+         certPath: 'kartik-public-key.pem'
+    }
 
 });
 
