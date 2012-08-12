@@ -7,5 +7,5 @@ module.exports = {
 
 	//XMPP server configuration
 	port: 5222,
-	domain: '0.0.0.0'
+	domain: 'localhost'
 }

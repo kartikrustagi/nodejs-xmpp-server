@@ -20,7 +20,8 @@ Router.prototype.route = function(stanza, from) {
     stanza.attrs.xmlns = 'jabber:client';
     if (stanza.attrs && stanza.attrs.to && stanza.attrs.to !== this.server.options.domain) {
         var toJid = new xmpp.JID(stanza.attrs.to);
-        if(toJid.domain === this.server.options.domain) {
+		//TODO: Using domain_custom as library modified to work on 0.8
+        if(toJid.domain_custom === this.server.options.domain) {
             if (self.sessions.hasOwnProperty(toJid.bare().toString())) {
                 // Now loop over all the sesssions and only send to the right jid(s)
                 var sent = false, resource;
@@ -121,6 +122,7 @@ exports.configure = function(server, config) {
 
         // this callback is called when the client sends a stanza.
         client.on('stanza', function(stanza) {
+			logger.info("Stanza received from a client");
             router.route(stanza, client);  // Let's send the stanza to the router and let the router decide what to do with it.
         });
     });
