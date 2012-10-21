@@ -2,15 +2,17 @@ var xmpp = require('node-xmpp');
 var r = require('../lib/roster.js');
 var ltx = require('ltx');
 var RosterStorage = r.Roster;
-var RosterItemStorage = r.RosterItem;
+var RosterContactStorage = r.RosterContact;
 
 // http://xmpp.org/rfcs/rfc3921.html#roster
-/* Items have : 
+/* Contacts have : 
 - key(jid)
 - state
 - name
 - groups [Not supported here for now TODO]
 */
+
+//TODO Kartik: No authentication for any of roster related operation
 
 function Roster() {
 }
@@ -48,8 +50,8 @@ exports.configure = function(server, config) {
                 if(stanza.attrs.type === "get") {
                     stanza.attrs.type = "result";
                     RosterStorage.find(new xmpp.JID(stanza.attrs.from).bare().toString(), function(roster) {
-                        roster.items.forEach(function(item) {
-                            query.c("item", {jid: item.jid, name: item.name, subscription: item.state});
+                        roster.contacts.forEach(function(contact) {
+                            query.c("item", {jid: contact.jid, name: contact.name, subscription: item.state});
                         });
                         stanza.attrs.to = stanza.attrs.from;
                         client.send(stanza); 
@@ -59,9 +61,9 @@ exports.configure = function(server, config) {
                     stanza.attrs.type = "result";
                     var i = query.getChild('item', "jabber:iq:roster");
                     RosterStorage.find(new xmpp.JID(stanza.attrs.from).bare().toString(), function(roster) {
-                        RosterItemStorage.find(roster, new xmpp.JID(i.attrs.jid).bare().toString(), function(item) {
+                        RosterContactStorage.find(roster, new xmpp.JID(i.attrs.jid).bare().toString(), function(contact) {
                             if(i.attrs.subscription === "remove") {
-                                item.delete(function() {
+                                contact.delete(function() {
                                     // And now send to all sessions.
                                     i.attrs.subscription = 'remove';
                                     stanza.attrs.from = client.server.options.domain; // Remove the from field.
@@ -71,19 +73,19 @@ exports.configure = function(server, config) {
                                     });
                                 });
                             } else {
-                                if(item.state === "from" && i.attrs.subscription === "to") {
-                                    item.state = "both";
+                                if(contact.state === "from" && i.attrs.subscription === "to") {
+                                    contact.state = "both";
                                 }
-                                else if(item.state === "to" && i.attrs.subscription === "from") {
-                                    item.state = "both";
+                                else if(contact.state === "to" && i.attrs.subscription === "from") {
+                                    contact.state = "both";
                                 }
                                 else {
-                                    item.state = i.attrs.subscription || "to";
+                                    contact.state = i.attrs.subscription || "to";
                                 }
-                                item.name = i.attrs.name || i.attrs.jid;
-                                item.save(function() {
+                                contact.name = i.attrs.name || i.attrs.jid;
+                                contact.save(function() {
                                     // And now send to all sessions.
-                                    i.attrs.subscription = item.state;
+                                    i.attrs.subscription = contact.state;
                                     stanza.attrs.from = client.server.options.domain; // Remove the from field.
                                     client.server.router.connectedClientsForJid(client.jid.toString()).forEach(function(jid) {
                                         stanza.attrs.to = jid.toString();
@@ -100,4 +102,3 @@ exports.configure = function(server, config) {
         });
     });
 }
-
