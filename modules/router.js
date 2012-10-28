@@ -26,6 +26,8 @@ Router.prototype.route = function(stanza, from) {
                 // Now loop over all the sesssions and only send to the right jid(s)
                 var sent = false, resource;
                 for (resource in self.sessions[toJid.bare().toString()]) {
+					//if to is: kartik@localhost/mac, then to.bare().toString() => kartik@localhost and to.toString() => kartik@localhost
+					//If no resource in to field then send to all and if resource is given then only to that resource
                     if (toJid.bare().toString() === toJid.toString() || toJid.resource === resource) {
                         self.sessions[toJid.bare().toString()][resource].send(stanza); 
                         sent = true;
