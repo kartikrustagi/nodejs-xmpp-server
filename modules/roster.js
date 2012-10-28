@@ -3,6 +3,7 @@ var r = require('../lib/roster.js');
 var ltx = require('ltx');
 var RosterStorage = r.Roster;
 var RosterContactStorage = r.RosterContact;
+var logger = PROJECTX.logger;
 
 // http://xmpp.org/rfcs/rfc3921.html#roster
 /* Contacts have : 
@@ -48,10 +49,11 @@ exports.configure = function(server, config) {
             var query = null;
             if (stanza.is('iq') && (query = stanza.getChild('query', "jabber:iq:roster"))) {
                 if(stanza.attrs.type === "get") {
+					logger.info("Roster get request from : "+stanza.attrs.from);
                     stanza.attrs.type = "result";
                     RosterStorage.find(new xmpp.JID(stanza.attrs.from).bare().toString(), function(roster) {
                         roster.contacts.forEach(function(contact) {
-                            query.c("item", {jid: contact.jid, name: contact.name, subscription: item.state});
+                            query.c("item", {jid: contact.jid, name: contact.name, subscription: contact.state});
                         });
                         stanza.attrs.to = stanza.attrs.from;
                         client.send(stanza); 

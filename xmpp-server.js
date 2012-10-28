@@ -23,6 +23,10 @@ config.load(configFilePath, function () {
 	var mongo = require('mongodb'), db = new mongo.Db(PROJECTX.config.mongo_db, new mongo.Server(PROJECTX.config.mongo_domain, PROJECTX.config.mongo_port));
 	logger.info("Mongo DB object created");
 	PROJECTX.db = db;
+	db.open(function(err, db) {
+		assert.equal(err, null);
+	});
+	logger.info("Connected to DB");
 }());
 
 var server = require('./lib/server.js');
