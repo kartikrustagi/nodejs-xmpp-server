@@ -20,5 +20,12 @@ exports.configure = function(server, config) {
 				cb(error);
 			});
 		});
+
+		client.on('check-privacy', function(stanza, cb){
+			console.log("checking privacy before processing the stanza");
+			Privacy.validate(stanza.attrs.from.split("/")[0], stanza.attrs.to, function(error){
+				cb(error);
+			});
+		});
 	});	
-}
+};

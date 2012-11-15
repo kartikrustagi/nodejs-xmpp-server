@@ -22,4 +22,4 @@ BLOCK-UNBLOCK
 #to retrieve details of a particular list
 <iq from='azitabh@localhost/orchard' type='get' id='getlist2'><query xmlns='jabber:iq:privacy'><list name='default'/></query></iq>
 #to edit on epartiicular list
-<iq from='azitabh@localhost/orchard' type='set' id='edit1'> <query xmlns='jabber:iq:privacy'> <list name='public'><item type='jid' value='paris@example.org' action='deny' order='5'/></list> </query> </iq>
+<iq from='azi@localhost/orchard' type='set' id='edit1'> <query xmlns='jabber:iq:privacy'> <list name='public'><item type='jid' value='kartik@localhost' action='deny' order='5'/></list> </query> </iq>
