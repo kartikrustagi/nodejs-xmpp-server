@@ -124,8 +124,11 @@ exports.configure = function(server, config) {
 
         // this callback is called when the client sends a stanza.
         client.on('stanza', function(stanza) {
-			logger.info("Stanza received from a client");
-            router.route(stanza, client);  // Let's send the stanza to the router and let the router decide what to do with it.
+			//Router should only care about 'message' stanzas and not iq and presence
+			if(stanza.is('message')){
+				logger.info("Message stanza received from a client");
+				router.route(stanza, client);  // Let's send the stanza to the router and let the router decide what to do with it.
+			}
         });
     });
     server.router = router; // We attach the router to the server. (Maybe we want to use an event for this actually to indicate that a new router was attached to the server?)
