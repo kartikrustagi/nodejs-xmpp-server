@@ -24,7 +24,9 @@ config.load(configFilePath, function () {
 	logger.info("Mongo DB object created");
 	PROJECTX.db = db;
 	db.open(function(err, db) {
-		assert.equal(err, null);
+		db.authenticate(PROJECTX.config.mongo_user, PROJECTX.config.mongo_pass, function(err, result) {
+			assert.equal(err, null);
+		});
 	});
 	logger.info("Connected to DB");
 }());

@@ -1,8 +1,8 @@
 .npmignore
 .travis.yml
-*.swp
 node_modules/jsconfig/
 node_modules/ltx/
 node_modules/mongodb/
 node_modules/node-expat/
 node_modules/winston/
+tags
