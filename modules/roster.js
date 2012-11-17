@@ -15,9 +15,6 @@ var logger = PROJECTX.logger;
 
 //TODO Kartik: No authentication for any of roster related operation
 
-function Roster() {
-}
-
 exports.configure = function(server, config) {
 
     server.on("connect", function(client) {

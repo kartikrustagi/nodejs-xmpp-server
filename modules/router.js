@@ -81,11 +81,14 @@ Router.prototype.registerRoute = function(jid, client) {
 Router.prototype.connectedClientsForJid = function(jid) {
     jid = new xmpp.JID(jid);
     if (!this.sessions.hasOwnProperty(jid.bare().toString())) {
+		logger.info("No connected client for jid: "+jid.bare().toString());
         return [];
     }
     else {
         var jids = [];
+		logger.info("Connected client for jid: "+jid.bare().toString());
         for(var resource in this.sessions[jid.bare().toString()]) {
+			logger.info(jid.bare().toString() + "/" + resource);
             jids.push(new xmpp.JID(jid.bare().toString() + "/" + resource));
         }
         return jids;
