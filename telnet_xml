@@ -1,9 +1,9 @@
 TO AUTHENTICATE
 ========
 <stream:stream xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" version="1.0" to="localhost">
-<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="PLAIN">a2FydGlrQGxvY2FsaG9zdABrYXJ0aWsAcnVzdGFnaQ==</auth>
+<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="PLAIN">a2FydGlrQGxvY2FsaG9zdABrYXJ0aWsAcnVzdGFnaQ==</auth>  --for user kartik
 OR
-<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="PLAIN">YXppQGxvY2FsaG9zdABhemkAYXppdGFiaA==</auth>
+<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="PLAIN">YXppQGxvY2FsaG9zdABhemkAYXppdGFiaA==</auth>  --for user azi
 <stream:stream xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" version="1.0" to="localhost">
 <iq type="set" id="bind"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"/></iq>
 <iq type="set" to="localhost" id="sess"><session xmlns="urn:ietf:params:xml:ns:xmpp-session"/></iq>
@@ -18,7 +18,7 @@ TO REGISTER
 BLOCK-UNBLOCK
 ========
 #to retrieve name of all lists
-<iq from='azitabh@localhost/orchard' type='get' id='getlist1'> <query xmlns='jabber:iq:privacy'/> </iq>
+<iq from='azi@localhost/orchard' type='get' id='getlist1'> <query xmlns='jabber:iq:privacy'/> </iq>
 #to retrieve details of a particular list
 <iq from='azi@localhost/orchard' type='get' id='getlist2'><query xmlns='jabber:iq:privacy'><list name='default'/></query></iq>
 #to edit on epartiicular list

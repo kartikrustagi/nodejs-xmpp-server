@@ -21,15 +21,11 @@ exports.configure = function(server, config) {
 			});
 		});
 
-		client.on('check-privacy', function(stanza, cb){
+		client.on('check-privacy', function(opts, cb){
 			console.log("checking privacy before processing the stanza");
-			if (stanza.is('message')){
-				Privacy.validate(stanza.attrs.from.split("/")[0], stanza.attrs.to, function(error){
-					cb(error);
-				});
-			}
-			else
-				cb(null);
+			Privacy.validate(opts.from, opts.to, function(error){
+				cb(error);
+			});
 		});
 	});	
 };
