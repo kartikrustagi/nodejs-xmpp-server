@@ -1,6 +1,6 @@
 {
 	"name":"projectX",
-	"version":"0.1",
+	"version":"0.1.1",
 	"dependencies":
 	{
 		"node-expat":">=1.4.1",
