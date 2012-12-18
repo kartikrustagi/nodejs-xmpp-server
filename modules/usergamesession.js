@@ -7,7 +7,7 @@ var ltx = require('ltx');
 
 
 exports.configure = function(server, config) {
-	server.router.on("recipientOffline", function(stanza) {
+	server.router.on("recipientOfflin", function(stanza) {
 		console.log("Received User Offline Event");
 		if(stanza.is("message")) {
 			console.log("Identified Message");
@@ -19,7 +19,7 @@ exports.configure = function(server, config) {
 	});
 	
 	server.on('connect', function(client) {
-		client.on("online", function() {
+		client.on("onlin", function() {
 			  console.log("Sending Messages received while user was offline.");
 			  Message.for(client.jid.bare().toString(), function(message) {
 				  client.send(ltx.parse(message.stanza));

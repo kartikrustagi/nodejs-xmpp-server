@@ -152,7 +152,7 @@ exports.configure = function(server, config) {
 			client.server.router.connectedClientsForJid(client.jid.toString()).forEach(function(jid) {
 				if(client.jid.resource != jid.resource) {
 					stanza.attrs.to = jid.toString();
-					client.server.router.sessions[client.jid.toString()][jid.resource].send(stanza);
+					client.server.router.sessions[client.jid.bare().toString()][jid.resource].send(stanza);
 				}
 			});
 			//Online contacts in his roster
