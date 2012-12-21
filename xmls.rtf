@@ -60,3 +60,18 @@ bmV3dXNlcjJAbG9jYWxob3N0AG5ld3VzZXIyAENhbGxpb3Bl\
 \
 #REMOVE item from roster\
 <iq from='kartik@localhost/mac' type='set' id='roster_4'><query xmlns='jabber:iq:roster'><item jid='listner@localhost' subscription='remove'/></query></iq>}
+
+
+
+
+TO INITIATE A GAME:
+node node_modules/node-xmpp/examples/send_message.js azi@localhost azitabh '{"type":"game","action":"init","sessionId":"bhcbvchdbhcbdj","gameId":"1","invites":["kartik@localhost","anshul@localhost"]}' jdcjbdd
+
+TO ACCEPT A GAME INVITATION:
+node node_modules/node-xmpp/examples/send_message.js kartik@localhost rustagi '{"type":"game","action":"accept","sessionId":"bhcbvchdbhcb"}' jdcjbdd
+
+TO REJECT A GAME INVITATION:
+node node_modules/node-xmpp/examples/send_message.js anshul@localhost anshul '{"type":"game","action":"reject","sessionId":"bhcbvchdbhcb"}' jdcjbdd
+
+SENDING GAME TURN:
+node node_modules/node-xmpp/examples/send_message.js anshul@localhost anshul '{"type":"game","action":"start","sessionId":"bhcbvchdbhcb"}' jdcjbdd
