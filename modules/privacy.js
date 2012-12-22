@@ -2,27 +2,26 @@ var xmpp = require('node-xmpp');
 var privacy = require('../lib/privacy.js');
 var Privacy = privacy.Privacy;
 var ltx = require('ltx');
-
-//console.log(Privacy);
+var logger = PROJECTX.logger;
 
 exports.configure = function(server, config) {	
 	server.on('connect', function(client) {
 		client.on('retrieve_privacy', function(opts, cb){
-			console.log("retrieving privacy for the user");
+			logger.debug("retrieving privacy for the user");
 			Privacy.retrieve(opts.jid, opts.list, function(doc){
 				cb(doc);	
 			});
 		});
 		
 		client.on('set-privacy', function(opts, cb){
-			console.log("editing privacy for the user");
+			logger.debug("editing privacy for the user");
 			Privacy.edit(opts.jid, opts.list, opts.item, function(error){
 				cb(error);
 			});
 		});
 
 		client.on('check-privacy', function(opts, cb){
-			console.log("checking privacy before processing the stanza");
+			logger.debug("checking privacy before processing the stanza");
 			Privacy.validate(opts.from, opts.to, function(error){
 				cb(error);
 			});

@@ -22,9 +22,9 @@ Router.prototype.route = function(stanza, from) {
         var toJid = new xmpp.JID(stanza.attrs.to);
 		//TODO: Using domain_custom as library modified to work on 0.8
         if(toJid.domain_custom === this.server.options.domain) {
-			console.log("Recepient is Internal User");
+			logger.debug("Recepient is Internal User");
             if (self.sessions.hasOwnProperty(toJid.bare().toString())) {
-				console.log("Recepient in Session");
+				logger.debug("Recepient in Session");
                 // Now loop over all the sesssions and only send to the right jid(s)
                 var sent = false, resource;
                 for (resource in self.sessions[toJid.bare().toString()]) {
@@ -44,14 +44,14 @@ Router.prototype.route = function(stanza, from) {
                 }
                 // We couldn't actually send to anyone!
                 if (!sent) {
-					console.log("Deleting Recepient from Session");
+					logger.debug("Deleting Recepient from Session");
                     delete self.sessions[toJid.bare().toString()];
-					console.log("Emitting Recepient Offline")
+					logger.debug("Emitting Recepient Offline")
                     self.emit("recipientOffline", stanza);
                 }
             }
             else {
-				console.log("Emitting Recepient Offline")
+				logger.debug("Emitting Recepient Offline")
                 self.emit("recipientOffline", stanza);
             }
         }

@@ -1,4 +1,3 @@
-//copy of some other module.. need to rewrite the events
 var xmpp = require('node-xmpp');
 var ltx = require('ltx');
 var gameinitiator = require('../lib/gameinitiator.js');
@@ -23,7 +22,7 @@ exports.configure = function(server, config) {
 				new Gameinitiator(gameData.sessionId.toString()).createSession({creatorJID:jid.bare().toString(),requestedJIDs:gameData.invites,gameInfo:gameInfo}, function(error){
 					if(!error){
 						new Usergamesession(jid.bare().toString()).addSession(gameData.sessionId.toString(), function(error){
-							console.log(error);
+							logger.info(error);
 						});
 						logger.debug('sending invitations to everyone');
 						gameData.invites.forEach(function(jid){
@@ -41,7 +40,6 @@ exports.configure = function(server, config) {
 			var gameData = JSON.parse(stanza.getChildText('body'));
 			var jid = new xmpp.JID(stanza.attrs.from);
 			var newGame = new Gameinitiator(gameData.sessionId.toString());
-			console.log('here');
 			newGame.acceptInvitation(jid.bare().toString(), function(error){
 				if(!error){
 					new Usergamesession(jid.bare().toString()).addSession(gameData.sessionId.toString(), function(error){

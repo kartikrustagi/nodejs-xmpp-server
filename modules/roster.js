@@ -21,8 +21,6 @@ exports.configure = function(server, config) {
         client.roster = new RosterStorage();
 
         client.roster.on('add', function(item) {
-            // console.log("USER JUST SUBSCRIBED AND WANTS TO ADD A ROSTER ITEM");
-            //
             // <iq type='set'>
             //   <query xmlns='jabber:iq:roster'>
             //     <item
