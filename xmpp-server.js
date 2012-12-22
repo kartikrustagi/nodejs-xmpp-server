@@ -4,7 +4,19 @@
 PROJECTX = {};
 
 //Setting up application wide logging
-var logger = require('winston');
+var winston = require('winston');
+var logger = new (winston.Logger)({
+	transports : [
+		new (winston.transports.Console)(),
+		//new (winston.transports.File)({filename:'log.log', level:'info'})
+	],
+	exceptionHandlers: [
+		new (winston.transports.Console)(),
+		//new winston.transports.File({filename:'error.log'})
+	],
+	exitOnError: false
+});
+
 PROJECTX.logger = logger;
 
 var assert = require('assert');
