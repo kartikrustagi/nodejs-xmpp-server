@@ -144,6 +144,10 @@ exports.configure = function(server, config) {
 		}); //end of on stanza
 		
 		client.on('end', function() {
+			if(!client.authenticated){
+				logger.info("Presence: Returning as client is not authenticated");
+				return;
+			}
 			// We need to send a <presence type="unavailable" > on his behalf
 			logger.info("Sending unavailable presence since client is going away");
 			var stanza = new xmpp.Element('presence', {from: client.jid.toString(), type: "unavailable" });
