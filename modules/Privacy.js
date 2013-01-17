@@ -1,5 +1,5 @@
 var xmpp = require('node-xmpp');
-var privacy = require('../lib/privacy.js');
+var privacy = require('../lib/Privacy.js');
 var Privacy = privacy.Privacy;
 var ltx = require('ltx');
 var logger = PROJECTX.logger;

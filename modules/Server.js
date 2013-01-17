@@ -2,13 +2,13 @@ var xmpp = require('node-xmpp');
 var logger = PROJECTX.logger;
 
 // Loading all modules needed
-var Router      = require('../modules/router');
-var Roster		= require('../modules/roster');
-var Presence    = require('../modules/presence');
-var Offline		= require('../modules/offline');
-var Privacy		= require('../modules/privacy');
-var GameInitiator	= require('../modules/gameinitiator');
-var User = require('../lib/users.js').User;
+var Router      = require('./Router');
+var Roster		= require('./Roster');
+var Presence    = require('./Presence');
+var Offline		= require('./Offline');
+var Privacy		= require('./Privacy');
+var GameInitiator	= require('./GameInitiator');
+var User = require('../lib/Users').User;
 
 exports.run = function(config, ready) {
     

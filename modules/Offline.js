@@ -1,5 +1,5 @@
 var xmpp = require('node-xmpp');
-var message = require('../lib/message.js');
+var message = require('../lib/Message.js');
 var Message = message.Message;
 var ltx = require('ltx');
 var logger = PROJECTX.logger;

@@ -1,5 +1,5 @@
 var xmpp = require('node-xmpp');
-var r = require('../lib/roster.js');
+var r = require('../lib/Roster.js');
 var ltx = require('ltx');
 var Roster = r.Roster;
 var Contact = r.Contact;

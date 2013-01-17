@@ -1,9 +1,9 @@
 var xmpp = require('node-xmpp');
 var ltx = require('ltx');
-var gameinitiator = require('../lib/gameinitiator.js');
-var usergamesession = require('../lib/usergamesession.js');
-var gameinfo = require('../lib/gameInfo.js');
-var gameActiveSession = require('../lib/gameSession.js');
+var gameinitiator = require('../lib/GameInitiator.js');
+var usergamesession = require('../lib/UserGameSession.js');
+var gameinfo = require('../lib/GameInfo.js');
+var gameActiveSession = require('../lib/GameSession.js');
 
 var Gameinitiator = gameinitiator.Gameinitiator;
 var Usergamesession = usergamesession.Usergamesession;

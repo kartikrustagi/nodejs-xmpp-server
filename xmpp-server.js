@@ -4,6 +4,8 @@
 PROJECTX = {};
 
 //Setting up application wide logging
+var logger = require('winston');
+/*
 var winston = require('winston');
 var logger = new (winston.Logger)({
 	transports : [
@@ -14,8 +16,9 @@ var logger = new (winston.Logger)({
 		new (winston.transports.Console)(),
 		//new winston.transports.File({filename:'error.log'})
 	],
-	exitOnError: false
+	exitOnError: true
 });
+*/
 
 PROJECTX.logger = logger;
 
@@ -43,7 +46,7 @@ config.load(configFilePath, function () {
 	logger.info("Connected to DB");
 }());
 
-var server = require('./lib/server.js');
+var server = require('./modules/server.js');
 server.run(config, function() {
 	logger.info("Server ready");
 });

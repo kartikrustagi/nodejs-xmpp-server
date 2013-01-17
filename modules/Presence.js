@@ -1,7 +1,7 @@
 var xmpp = require('node-xmpp');
 var ltx = require('ltx');
 var logger = PROJECTX.logger;
-var p = require("../lib/presence.js");
+var p = require("../lib/Presence.js");
 var Presence = p.Presence;
 
 // http://xmpp.org/extensions/xep-0160.html
