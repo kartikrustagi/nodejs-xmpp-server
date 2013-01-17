@@ -14,6 +14,14 @@ var Presence = p.Presence;
 // IMPLEMENT PRIORITY (IN ROUTER AS WELL!)
 // 
 
+/*
+ * Whether a user is offline or online is driven by the type parameter
+ * Status will be a json
+ * If mode = available, user is active on the app
+ * If mode = away, app is closed, so need to update last seen at
+ * If server sends a presence with mode = away, then it will also send last seen at as a part of status json
+ */
+
 exports.configure = function(server, config) {
 
 	server.on('connect', function(client) {
