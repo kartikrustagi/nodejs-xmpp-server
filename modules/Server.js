@@ -5,29 +5,32 @@ var logger = PROJECTX.logger;
 var Router      = require('./Router');
 var Roster		= require('./Roster');
 var Presence    = require('./Presence');
+var LastActivity = require('./LastActivity');
 var Offline		= require('./Offline');
 var Privacy		= require('./Privacy');
 var GameInitiator	= require('./GameInitiator');
 var User = require('../lib/Users').User;
+var Cluster = require('../lib/Cluster').Cluster;
 
 exports.run = function(config, ready) {
     
     // Creates the server.
     var server = new xmpp.C2SServer(config);
+	server.cluster = new Cluster();
 
 	// Configure the mods at the server level!
 	Roster.configure(server, config.roster);
-	/*
     Router.configure(server, config.router); 
 	Presence.configure(server, config.presence);
+	LastActivity.configure(server, config.lastActivity);
 	Offline.configure(server, config.offline);
 	Privacy.configure(server, config.privacy);
+	/*
 	GameInitiator.configure(server, config.gamedata);
 	*/
 
     // On Connect event. When a client connects.
     server.on("connect", function(client) {
-
         // Allows the developer to authenticate users against anything they want.
         client.on("authenticate", function(opts, cb) {
             User.find(opts.jid, function(user) {
@@ -42,7 +45,8 @@ exports.run = function(config, ready) {
         client.on("register", function(opts, cb) {
             User.register(opts.jid, opts.password, {
                 success: function() {
-                    cb(false);
+					clien.emit('init-presence', opts.jid);
+					cb(false);
                 },
                 error: function(message) {
 					logger.info("Server: "+opts.jid.bare().toString()+" already registered");

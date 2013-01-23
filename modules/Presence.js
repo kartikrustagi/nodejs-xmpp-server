@@ -3,10 +3,10 @@ var ltx = require('ltx');
 var logger = PROJECTX.logger;
 var p = require("../lib/Presence.js");
 var Presence = p.Presence;
+var Privacy = require("../lib/Privacy.js");
 
 // http://xmpp.org/extensions/xep-0160.html
 // TODO (kartik) Assuming subscription to be always "both"
-// TODO (kartik) Assuming everything to be single server, no s2s
 
 // TODO
 // Deal with 5.1.4.  Directed Presence. 
@@ -25,126 +25,84 @@ var Presence = p.Presence;
 exports.configure = function(server, config) {
 
 	server.on('connect', function(client) {
-		client.initial_presence_sent = false;
+
+
+
+		client.on('init-presence', function(jid) {
+			Presence.initPresence(jid, function(err) {
+				if(err) {
+					logger.error("Unable to init presence fir jid : "+opts.jid.bare().toString());
+				}
+			});
+		});
 
 		client.on('stanza', function(stz) {
 			var stanza = ltx.parse(stz.toString());
-
 			if (stanza.is('presence')) {
-				// TODO: Blocking Outbound Presence Notifications.
-				// Ok, now we must do things
-				// Checking if this is the first presence message from a client
-				if ((!stanza.attrs.to || stanza.attrs.to === client.server.options.domain) && !stanza.attrs.type && !client.initial_presence_sent) {
-					logger.info("1st presence from: "+stanza.attrs.from);
-					//Initial Presence
-					// Section 5.1.1 in http://xmpp.org/rfcs/rfc3921.html#presence
-					client.initial_presence_sent = true;
+				// Broadcast presence
+				if (!stanza.attrs.to || (stanza.attrs.to === client.server.options.domain)) {
+					// Customization: We are doing away with initial presence stanza limitation
+					//Save presence info in DB
+					logger.info("Saving presence of: "+client.jid.bare().toString());
+					new Presence(client.jid.bare().toString(), stanza.attrs.type, stanza.getChildText('show'), stanza.getChildText('status'), stanza.getChildText('priority')).setPresence(function(err) {
+						//TODO: What to do here?
+						if(!err) {
+						}
+					});
+					//Setting last active time
+					if(stanza.attrs.type && (stanza.attrs.type === 'available')) {
+						if(stanza.getChildText('status')) {
+							if(stanza.getChildText('status') === 'available') {
+								client.emit('set-active');
+							} else if(stanza.getChildText('status') === 'away') {
+								client.emit('set-inactive');
+							}
+						}
+					} else if(stanza.attrs.type && (stanza.attrs.type === 'unavailable')) {
+						client.emit('set-inactive');
+					}
 					if(client.roster) {
 						//Sending presence probe to all roster JIDs(bare) with subscription equals both and which are connected(online)
 						//Sending initial presence to all roster JIDs(bare) with subscription equals both and which are connected(online)
 						//Since no S2s, so just lookup DB and send the presence info for all contacts which are online
 						logger.info("Sending last stored presence of all contacts to: "+client.jid.bare().toString());
-						client.roster.eachSubscription(["both"], function(contact) {
-							//Checking if this contact is blocked or not
-							client.emit('check-privacy', {from: contact.jid,  to: client.jid.bare().toString()}, function(err){
-								// TODO (kartik) Make the calls to send non-blocking
-								if(err == null){
-									var clients = client.server.router.connectedClientsForJid(contact.jid); //Array of client objects for each connected resource
-									logger.info("Checking online contacts for contact: "+contact.jid+" of: "+client.jid.bare().toString());
-									if(clients.length === 0){
-										logger.info("No online contacts for: "+client.jid.bare().toString());
-										//Do nothing //5.1.3(4th point)
-									}else{
-										//connected. Send the stored presence to client
-										logger.info("Bingo,we have online contacts for: "+client.jid.bare().toString());
-										Presence.getPresence(contact.jid, function(clientPresence){
-											client.send(new xmpp.Element('presence', {from: contact.jid,  to: client.jid.bare().toString(), show: clientPresence.showVal, 'status': clientPresence.statusVal, priority: clientPresence.priorityVal}));
-										});
-										//send initial presence	to all connected clients (all of its resources)	
-										//send directly as there is no S2S
-										for(resource in client.server.router.sessions[contact.jid]){
-											stanza.attrs.to = contact.jid; //Rest of presence message remaining same
-											client.server.router.sessions[contact.jid][resource].send(stanza);
+						var contact = null;
+						client.roster.forEach(function(contactJidBStr) {
+							contact = client.roster[contactJidBStr];
+							//Checking if this contact is blocked or not either ways
+							Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
+								if(err == null) {
+									//We will check if the contact is online or not, if it is online then only will be send its last stored presence to client
+									Presence.getPresence(contact.contactJid, function(presence) {
+										if(presence.typeVal === 'unavailable') {
+											//Contact offline
+										} else {
+											logger.info("Bingo,we have online contacts for: "+client.jid.bare().toString());
+											client.send(new xmpp.Element('presence', {from: contactJidBStr,  to: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal));
+											//send initial presence	of the client to the contact
+											stanza.attrs.to = contactJidBStr;
+											client.server.cluster.publish(contactJidBStr, stanza);
 										}
-									}
+									});
+								} else {
+									logger.info("Presence: Operation not allowed due to privacy");
 								}
 							});
 						});
-					}
-					//Send initial presence to all of its namesakes (fellow connected resources)
-					// Send the presence to the other resources for this jid, if any.
-					logger.info("Sending presence to all other online resources of: "+stanza.attrs.from);
-					client.server.router.connectedClientsForJid(client.jid.bare().toString()).forEach(function(jid){
-						if(client.jid.resource != jid.resource){
-							stanza.attrs.to = jid.toString();
-							client.server.router.sessions[client.jid.bare().toString()][jid.resource].send(stanza);
-						}
-					});
-					//Save presence info in DB
-					logger.info("Saving presence of: "+client.jid.bare().toString());
-					new Presence(client.jid.bare().toString(), stanza.getChildText('show'), stanza.getChildText('status'), stanza.getChildText('priority')).setPresence(function(err){
-						//err already checked for null
-					});
-				} else if((!stanza.attrs.to || (stanza.attrs.to === client.server.options.domain)) && (!stanza.attrs.type || stanza.attrs.type === "unavailable") && client.initial_presence_sent) {
-					//General presence broadcast message
-					logger.info("General presence update from: "+stanza.attrs.from);
-					if(client.roster) {
-						//Sending presence to all roster JIDs(bare) with subscription equals both and which are connected(online)
-						logger.info("Sending last stored presence of all contacts to: "+client.jid.bare().toString());
-						client.roster.eachSubscription(["both"], function(contact) {
-							//Checking if this contact is blocked or not
-							client.emit('check-privacy', {from: contact.jid,  to: client.jid.bare().toString()}, function(err){
-								// TODO (kartik) Make the calls to send non-blocking
-								if(err == null){
-									var clients = client.server.router.connectedClientsForJid(contact.jid); //Array of client objects for each connected resource
-									logger.info("Checking online contacts for contact: "+contact.jid+" of: "+client.jid.bare().toString());
-									if(clients.length === 0){
-										logger.info("No online contacts for: "+client.jid.bare().toString());
-										//Do nothing //5.1.3(4th point)
-									}else{
-										//connected. Send the stored presence to client
-										logger.info("Bingo,we have online contacts for: "+client.jid.bare().toString());
-										Presence.getPresence(contact.jid, function(clientPresence){
-											client.send(new xmpp.Element('presence', {from: contact.jid,  to: client.jid.bare().toString(), show: clientPresence.showVal, 'status': clientPresence.statusVal, priority: clientPresence.priorityVal}));
-										});
-										//send initial presence	to all connected clients (all of its resources)	
-										//send directly as there is no S2S
-										for(resource in client.server.router.sessions[contact.jid]){
-											stanza.attrs.to = contact.jid; //Rest of presence message remaining same
-											client.server.router.sessions[contact.jid][resource].send(stanza);
-										}
-									}
-								}
-							});
-						});
-					}
-					//Send initial presence to all of its namesakes (fellow connected resources)
-					// Send the presence to the other resources for this jid, if any.
-					logger.info("Sending presence to all other online resources of: "+stanza.attrs.from);
-					client.server.router.connectedClientsForJid(client.jid.bare().toString()).forEach(function(jid){
-						if(client.jid.resource != jid.resource){
-							stanza.attrs.to = jid.toString();
-							client.server.router.sessions[client.jid.bare().toString()][jid.resource].send(stanza);
-						}
-					});
-					//Save presence info in DB
-					logger.info("Saving presence of: "+client.jid.bare().toString());
-					new Presence(client.jid.bare().toString(), stanza.getChildText('show'), stanza.getChildText('status'), stanza.getChildText('priority')).setPresence(function(err){
-						//err already checked for null
-					});
-				} else if(stanza.attrs.to && (stanza.attrs.to != client.server.options.domain) && (!stanza.attrs.type || (stanza.attrs.type == 'unavailable'))){
+					}	
+				} else if(stanza.attrs.to && (stanza.attrs.to != client.server.options.domain)){
 					//Directed presence, 5.1.4
 					//Simplified implementation of directed presence. Just send
 					//directed present to the 'to' field
 					logger.info("Directed presence from: "+stanza.attrs.from+"  to: "+stanza.attrs.to);
 					//Checking if this contact is blocked or not
-					client.emit('check-privacy', {from: stanza.attrs.from,  to: stanza.attrs.to}, function(err){
-						// TODO (kartik) Make the calls to send non-blocking
+					var toJid = new xmpp.JID(stanza.attrs.to);
+					var fromJid = new xmpp.JID(stanza.attrs.from);	
+					Privacy.checkPrivacy(fromJid, toJid, function(err){
 						if(err == null){
-							var toJID = new xmpp.JID(stanza.attrs.to);
-							for(resource in client.server.router.sessions[toJID.bare().toString()]){
-								client.server.router.sessions[toJID.bare().toString()][resource].send(stanza);
-							}
+							var contactJidBStr = toJid.bare().toString();
+							stanza.attrs.to = contactJidBStr;
+							client.server.cluster.publish(contactJidBStr, stanza);
 						} 
 					});
 				}
@@ -152,42 +110,50 @@ exports.configure = function(server, config) {
 		}); //end of on stanza
 		
 		client.on('end', function() {
+			//TODO: Check till when do we have the client object in memory
 			if(!client.authenticated){
 				logger.info("Presence: Returning as client is not authenticated");
 				return;
 			}
-			// We need to send a <presence type="unavailable" > on his behalf
-			logger.info("Sending unavailable presence since client is going away");
-			var stanza = new xmpp.Element('presence', {from: client.jid.toString(), type: "unavailable" });
-			//Namesakes (other resources)
-			logger.info("Sending presence to all other online resources of: "+stanza.attrs.from);
-			client.server.router.connectedClientsForJid(client.jid.toString()).forEach(function(jid) {
-				if(client.jid.resource != jid.resource) {
-					stanza.attrs.to = jid.toString();
-					client.server.router.sessions[client.jid.bare().toString()][jid.resource].send(stanza);
+			var storedPresence = null;
+			Presence.getPresence(contact.contactJid, function(presence) {
+				if(presence) {
+					//Storing unavailability in DB
+					presence.type = 'unavailable';
+					presence.setPresence(function(error) {
+						//TODO: Now what?
+					});
+					// Now we need to send a <presence type="unavailable" > on his behalf
+					logger.info("Sending unavailable presence since client is going away");
+					var stanza = new xmpp.Element('presence', {from: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal);
+					client.roster.forEach(function(contactJidBStr) {
+						contact = client.roster[contactJidBStr];
+						//Checking if this contact is blocked or not either ways
+						Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
+							if(err == null) {
+								//We will check if the contact is online or not, if it is online then only will be send its last stored presence to client
+								Presence.getPresence(contact.contactJid, function(presence) {
+									if(presence.typeVal === 'unavailable') {
+										//Contact offline
+									} else {
+										//send presence	of the client to the contact
+										stanza.attrs.to = contactJidBStr;
+										client.server.cluster.publish(contactJidBStr, stanza);
+									}
+								});
+							} else {
+								logger.info("Presence: Operation not allowed due to privacy");
+							}
+						});
+					});
+				}else {
+					//Why no presence?
 				}
 			});
-			//Online contacts in his roster
-			logger.info("Sending presence to all other online resources of: "+stanza.attrs.from);
-			client.roster.eachSubscription(["both"], function(contact) {
-				stanza.attrs.to = contact.jid;
-				var clients = client.server.router.connectedClientsForJid(contact.jid); //Array of client objects for each connected resource
-				logger.info("Checking online contacts for contact: "+contact.jid+" of: "+client.jid.bare().toString());
-				if(clients.length === 0){
-					logger.info("No online contacts for: "+client.jid.bare().toString());
-					//Do nothing //5.1.3(4th point)
-				}else{
-					//connected
-					logger.info("Bingo,we have online contacts for: "+client.jid.bare().toString());
-					//send initial presence	to all connected clients (all of its resources)	
-					//send directly as there is no S2S
-					for(resource in client.server.router.sessions[contact.jid]){
-						stanza.attrs.to = contact.jid; //Rest of presence message remaining same
-						client.server.router.sessions[contact.jid][resource].send(stanza);
-					}
-				}
-			});
-		});
+		});//end of on end
+
+
 
 	}); //end of on server connect
+
 } //end of configure

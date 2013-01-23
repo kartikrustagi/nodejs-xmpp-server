@@ -3,6 +3,8 @@ var ltx = require('ltx');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var logger = PROJECTX.logger;
+var Privacy = require('../lib/Privacy.js').Privacy;
+var Presence = require('../lib/Presence.js').Presence;
 
 
 /**
@@ -23,18 +25,16 @@ Router.prototype.route = function(stanza, from) {
 		//Checking if S2S required: Actually not required, as we don't give a shit
         if(toJid.domain_custom === this.server.options.domain) {
 			logger.debug("Recepient is same domain, as will always be the case");
-            if (self.sessions.hasOwnProperty(toJid.bare().toString())) {
-				logger.debug("Recepient in Session");
-                // Now loop over all the sesssions and only send to the right jid(s)
-				self.sessions[toJid.bare().toString()].send(stanza);
-            }
-            else {
-				//TODO: Maybe on some other cluster
-				logger.debug("Emitting Recepient Offline");
-                self.emit("recipientOffline", stanza);
-            }
-        }
-        else {
+			client.cluster.publish(toJid.bare().toString(), function(subCount) {
+				if(subCount == 0) {
+					//No one is subscribing to this
+					logger.debug("Emitting Recepient Offline");
+					self.emit("recipientOffline", stanza);
+				} else {
+					//Some on subscribing to it received the message, job done
+				}
+			});
+        } else {
 			logger.error("Why are we here?? No S2S");
             self.emit("externalUser", stanza);
         }
@@ -70,7 +70,9 @@ Router.prototype.unregisterRoute = function(jid) {
 };
 
 exports.configure = function(server, config) {
+
     var router = new Router(server); // Using the right C2S Router.
+
     server.on('connect', function(client) {
 
         // When the user is online and authenticated, let's register the route. there could be other things involed here... like presence! 
@@ -78,7 +80,9 @@ exports.configure = function(server, config) {
 			//Register in local machine's session
             router.registerRoute(client.jid, client);
 			//Register in the cross-machine cluster
-
+			server.cluster.subscribeTo(client.jid.bare().toString(), function(channel, message){
+				client.send(message);
+			});
         });
         
         // When the user is offline, we remove him from the router.
@@ -86,17 +90,25 @@ exports.configure = function(server, config) {
             if(client.jid) {
                 // We may not have a jid just yet if the client never connected before
                 router.unregisterRoute(client.jid);
+				server.cluster.unsubscribeFrom(client.jid.bare().toString());
             }
         });
 
         // this callback is called when the client sends a stanza.
-        client.on('stanza', function(stanza) {
+		client.on('stanza', function(stanza) {
 			//Router should only care about 'message' stanzas and not iq and presence
-			if(stanza.is('message')){
+			if(stanza.is('message')) {
 				logger.info("Message stanza received from a client");
-				router.route(stanza, client);  // Let's send the stanza to the router and let the router decide what to do with it.
+				Privacy.checkPrivacy(new xmpp.JID(stanza.attrs.from), new xmpp.JID(stanza.attrs.to), function(error) {
+					if(error) {
+						logger.debug("Privacy not allowing message sending, Message stanza: ");
+						logger.debug(stanza);
+					}else {
+						router.route(stanza, client);  // Let's send the stanza to the router and let the router decide what to do with it.
+					}
+				});
 			}
-        });
+		});
 
     });
     server.router = router; // We attach the router to the server. (Maybe we want to use an event for this actually to indicate that a new router was attached to the server?)
