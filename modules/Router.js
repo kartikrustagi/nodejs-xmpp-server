@@ -23,7 +23,7 @@ Router.prototype.route = function(stanza, from) {
     if (stanza.attrs && stanza.attrs.to && (stanza.attrs.to !== this.server.options.domain)) {
         var toJid = new xmpp.JID(stanza.attrs.to);
 		//Checking if S2S required: Actually not required, as we don't give a shit
-        if(toJid.domain_custom === this.server.options.domain) {
+        if(toJid.domainserver === this.server.options.domain) {
 			logger.debug("Recepient is same domain, as will always be the case");
 			client.cluster.publish(toJid.bare().toString(), function(subCount) {
 				if(subCount == 0) {

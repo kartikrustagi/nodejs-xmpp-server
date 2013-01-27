@@ -31,6 +31,7 @@ exports.run = function(config, ready) {
 
     // On Connect event. When a client connects.
     server.on("connect", function(client) {
+
         // Allows the developer to authenticate users against anything they want.
         client.on("authenticate", function(opts, cb) {
             User.find(opts.jid, function(user) {
@@ -45,7 +46,7 @@ exports.run = function(config, ready) {
         client.on("register", function(opts, cb) {
             User.register(opts.jid, opts.password, {
                 success: function() {
-					clien.emit('init-presence', opts.jid);
+					client.emit('init-presence', opts.jid);
 					cb(false);
                 },
                 error: function(message) {
