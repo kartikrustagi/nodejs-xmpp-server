@@ -76,11 +76,11 @@ exports.configure = function(server, config) {
     server.on('connect', function(client) {
 
         // When the user is online and authenticated, let's register the route. there could be other things involed here... like presence! 
-        client.on('auth-success', function() {
+        client.on('auth-success', function(jid) {
 			//Register in local machine's session
-            router.registerRoute(client.jid, client);
+            router.registerRoute(jid, client);
 			//Register in the cross-machine cluster
-			server.cluster.subscribeTo(client.jid.bare().toString(), function(channel, message){
+			server.cluster.subscribeTo(jid.bare().toString(), function(channel, message){
 				client.send(message);
 			});
         });
