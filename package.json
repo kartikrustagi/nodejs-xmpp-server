@@ -1,13 +1,14 @@
 {
 	"name":"projectX",
-	"version":"0.1.1",
+	"version":"0.1.2",
 	"dependencies":
 	{
 		"node-expat":">=1.4.1",
 		"ltx":">=0.2.2",
 		"jsconfig":">=0.2.0",
 		"mongodb":">=1.1.6",
-		"winston":">=0.6.2"
+		"winston":">=0.6.2",
+		"node-xmpp":"git+ssh://git@github.com:kartikrustagi/node-xmpp.git#master"
 	}
 }
 
