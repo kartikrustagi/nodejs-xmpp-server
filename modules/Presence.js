@@ -44,7 +44,7 @@ exports.configure = function(server, config) {
 					// Customization: We are doing away with initial presence stanza limitation
 					//Save presence info in DB
 					logger.info("Saving presence of: "+client.jid.bare().toString());
-					new Presence(client.jid.bare().toString(), stanza.attrs.type, stanza.getChildText('show'), stanza.getChildText('status'), stanza.getChildText('priority')).setPresence(function(err) {
+					new Presence(client.jid, stanza.attrs.type, stanza.getChildText('show'), stanza.getChildText('status'), stanza.getChildText('priority')).setPresence(function(err) {
 						//TODO: What to do here?
 						if(!err) {
 						}
@@ -67,8 +67,9 @@ exports.configure = function(server, config) {
 						//Since no S2s, so just lookup DB and send the presence info for all contacts which are online
 						logger.info("Sending last stored presence of all contacts to: "+client.jid.bare().toString());
 						var contact = null;
-						client.roster.forEach(function(contactJidBStr) {
-							contact = client.roster[contactJidBStr];
+						var contactJidBStr = null;
+						for(contactJidBStr in client.roster.contacts) {
+							contact = client.roster.contacts[contactJidBStr];
 							//Checking if this contact is blocked or not either ways
 							Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
 								if(err == null) {
@@ -88,7 +89,7 @@ exports.configure = function(server, config) {
 									logger.info("Presence: Operation not allowed due to privacy");
 								}
 							});
-						});
+						}
 					}	
 				} else if(stanza.attrs.to && (stanza.attrs.to != client.server.options.domain)){
 					//Directed presence, 5.1.4
@@ -126,8 +127,8 @@ exports.configure = function(server, config) {
 					// Now we need to send a <presence type="unavailable" > on his behalf
 					logger.info("Sending unavailable presence since client is going away");
 					var stanza = new xmpp.Element('presence', {from: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal);
-					client.roster.forEach(function(contactJidBStr) {
-						contact = client.roster[contactJidBStr];
+					for(contactJidBStr in client.roster.contacts) {
+						contact = client.roster.contacts[contactJidBStr];
 						//Checking if this contact is blocked or not either ways
 						Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
 							if(err == null) {
@@ -145,7 +146,7 @@ exports.configure = function(server, config) {
 								logger.info("Presence: Operation not allowed due to privacy");
 							}
 						});
-					});
+					}
 				}else {
 					//Why no presence?
 				}

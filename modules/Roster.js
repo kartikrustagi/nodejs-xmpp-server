@@ -37,6 +37,7 @@ exports.configure = function(server, config) {
                 if(stanza.attrs.type === "get") {
 					logger.info("Roster get request from : "+stanza.attrs.from);
                     stanza.attrs.type = "result";
+					var contactJidBStr = null;
 					for(contactJidBStr in client.roster.contacts) {
 						if(client.roster.contacts.hasOwnProperty(contactJidBStr)) {
 							var contact = client.roster.contacts[contactJidBStr];
