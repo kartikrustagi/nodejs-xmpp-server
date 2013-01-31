@@ -69,22 +69,26 @@ Router.prototype.unregisterRoute = function(jid) {
     return true;
 };
 
+
+var router = null;
+
+// When the user is online and authenticated, let's register the route. there could be other things involed here... like presence! 
+exports.setRouting = function(jid, client, server) {
+	logger.debug("In set routing for jid: "+jid);
+	//Register in local machine's session
+	router.registerRoute(jid, client);
+	//Register in the cross-machine cluster
+	server.cluster.subscribeTo(jid.bare().toString(), function(channel, message){
+		client.send(message);
+	});
+};
+
 exports.configure = function(server, config) {
 
-    var router = new Router(server); // Using the right C2S Router.
+	router = new Router(server); // Using the right C2S Router.
 
     server.on('connect', function(client) {
 
-        // When the user is online and authenticated, let's register the route. there could be other things involed here... like presence! 
-        client.on('auth-success', function(jid) {
-			//Register in local machine's session
-            router.registerRoute(jid, client);
-			//Register in the cross-machine cluster
-			server.cluster.subscribeTo(jid.bare().toString(), function(channel, message){
-				client.send(message);
-			});
-        });
-        
         // When the user is offline, we remove him from the router.
         client.on('end', function() {
             if(client.jid) {

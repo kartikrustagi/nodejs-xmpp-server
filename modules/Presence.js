@@ -3,7 +3,7 @@ var ltx = require('ltx');
 var logger = PROJECTX.logger;
 var p = require("../lib/Presence.js");
 var Presence = p.Presence;
-var Privacy = require("../lib/Privacy.js");
+var Privacy = require("../lib/Privacy.js").Privacy;
 
 // http://xmpp.org/extensions/xep-0160.html
 // TODO (kartik) Assuming subscription to be always "both"
@@ -28,10 +28,16 @@ exports.configure = function(server, config) {
 
 
 
-		client.on('init-presence', function(jid) {
+		client.on('init-presence', function(jid, registerationCb) {
 			Presence.initPresence(jid, function(err) {
 				if(err) {
-					logger.error("Unable to init presence fir jid : "+opts.jid.bare().toString());
+					logger.error("Unable to init presence for jid : "+opts.jid.bare().toString());
+					var err = new Error("Unable to init presence");
+					err.code = 500;
+					err.type = "cancel";
+					registerationCb(err);
+				}else {
+					registerationCb(false);
 				}
 			});
 		});
@@ -44,6 +50,7 @@ exports.configure = function(server, config) {
 					// Customization: We are doing away with initial presence stanza limitation
 					//Save presence info in DB
 					logger.info("Saving presence of: "+client.jid.bare().toString());
+					logger.info("Presence stanza: "+stz.toString());
 					new Presence(client.jid, stanza.attrs.type, stanza.getChildText('show'), stanza.getChildText('status'), stanza.getChildText('priority')).setPresence(function(err) {
 						//TODO: What to do here?
 						if(!err) {
@@ -82,7 +89,7 @@ exports.configure = function(server, config) {
 											client.send(new xmpp.Element('presence', {from: contactJidBStr,  to: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal));
 											//send initial presence	of the client to the contact
 											stanza.attrs.to = contactJidBStr;
-											client.server.cluster.publish(contactJidBStr, stanza);
+											client.server.cluster.publish(contactJidBStr, stanza, function(subCount){});
 										}
 									});
 								} else {
@@ -96,6 +103,7 @@ exports.configure = function(server, config) {
 					//Simplified implementation of directed presence. Just send
 					//directed present to the 'to' field
 					logger.info("Directed presence from: "+stanza.attrs.from+"  to: "+stanza.attrs.to);
+					logger.info(stanza);
 					//Checking if this contact is blocked or not
 					var toJid = new xmpp.JID(stanza.attrs.to);
 					var fromJid = new xmpp.JID(stanza.attrs.from);	
@@ -103,7 +111,7 @@ exports.configure = function(server, config) {
 						if(err == null){
 							var contactJidBStr = toJid.bare().toString();
 							stanza.attrs.to = contactJidBStr;
-							client.server.cluster.publish(contactJidBStr, stanza);
+							client.server.cluster.publish(contactJidBStr, stanza, function(subCount){});
 						} 
 					});
 				}
@@ -111,16 +119,17 @@ exports.configure = function(server, config) {
 		}); //end of on stanza
 		
 		client.on('end', function() {
-			//TODO: Check till when do we have the client object in memory
+			logger.debug("In Presence: on client end");
 			if(!client.authenticated){
 				logger.info("Presence: Returning as client is not authenticated");
 				return;
 			}
 			var storedPresence = null;
-			Presence.getPresence(contact.contactJid, function(presence) {
+			Presence.getPresence(client.jid, function(presence) {
 				if(presence) {
 					//Storing unavailability in DB
 					presence.type = 'unavailable';
+					logger.info("Setting presence as unavailable");
 					presence.setPresence(function(error) {
 						//TODO: Now what?
 					});

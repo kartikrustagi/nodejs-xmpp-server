@@ -9,11 +9,11 @@ exports.configure = function(server, config) {
 
 
 		client.on('set-active', function() {
-			LastActive.setActive(client.jid);
+			LastActivity.setActive(client.jid);
 		});
 
 		client.on('set-inactive', function() {
-			LastActive.setInActive(client.jid);
+			LastActivity.setInActive(client.jid);
 		});
 
 		client.on('end', function() {

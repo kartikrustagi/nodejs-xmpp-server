@@ -35,9 +35,10 @@ exports.run = function(config, ready) {
         // Allows the developer to authenticate users against anything they want.
         client.on("authenticate", function(opts, cb) {
             User.find(opts.jid, function(user) {
-                if (user && user.attrs.password === opts.password)
-                    cb();
-                else
+				if (user && user.attrs.password === opts.password) {
+					Router.setRouting(opts.jid, client, server);
+					Roster.setRoster(opts.jid, client, cb);
+				} else
                     cb(new Error("Authentication failure"));
             });
 		});
@@ -46,8 +47,9 @@ exports.run = function(config, ready) {
         client.on("register", function(opts, cb) {
             User.register(opts.jid, opts.password, {
                 success: function() {
-					client.emit('init-presence', opts.jid);
-					cb(false);
+					//Tasks required to be done before callback
+					//1. Init Presence
+					client.emit('init-presence', opts.jid, cb);
                 },
                 error: function(message) {
 					logger.info("Server: "+opts.jid.bare().toString()+" already registered");
@@ -57,7 +59,8 @@ exports.run = function(config, ready) {
                     cb(err);
                 }
             });
-        });
+		});
+
 
     });
 	

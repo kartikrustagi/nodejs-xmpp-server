@@ -15,17 +15,18 @@ var logger = PROJECTX.logger;
 
 //TODO Kartik: No authentication for any of roster related operation
 
+exports.setRoster = function(jid, client, authCb) {
+	Roster.find(jid, function(roster) {
+		client.roster = roster;
+		console.log("In Roster set roster: ");
+		console.log(client.roster);
+		authCb();
+	});
+};
+
 exports.configure = function(server, config) {
 
     server.on("connect", function(client) {
-
-        client.on('auth-success', function(jid) {
-            Roster.find(jid, function(roster) {
-				client.roster = roster;
-				console.log("In Roster auth-success: ");
-				console.log(client.roster);
-			});
-        });
 
         client.on('stanza', function(stz) {
             var self = this;
