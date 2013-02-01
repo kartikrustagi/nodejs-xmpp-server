@@ -49,8 +49,18 @@ exports.configure = function(server, config) {
 				if (!stanza.attrs.to || (stanza.attrs.to === client.server.options.domain)) {
 					// Customization: We are doing away with initial presence stanza limitation
 					//Save presence info in DB
+					if(!stanza.attrs.type) {
+						//Default type
+						logger.info("In Presence: Setting up default type value");
+						stanza.attrs.type = 'available';
+					}
+					if(!stanza.getChildText('show')) {
+						//Default show
+						logger.info("In Presence: Setting up default show value");
+						stanza.c('show').t('available').up();
+					}
 					logger.info("Saving presence of: "+client.jid.bare().toString());
-					logger.info("Presence stanza: "+stz.toString());
+					logger.info("Presence stanza: "+stanza.toString());
 					new Presence(client.jid, stanza.attrs.type, stanza.getChildText('show'), stanza.getChildText('status'), stanza.getChildText('priority')).setPresence(function(err) {
 						//TODO: What to do here?
 						if(!err) {
@@ -58,10 +68,12 @@ exports.configure = function(server, config) {
 					});
 					//Setting last active time
 					if(stanza.attrs.type && (stanza.attrs.type === 'available')) {
-						if(stanza.getChildText('status')) {
-							if(stanza.getChildText('status') === 'available') {
+						if(stanza.getChildText('show')) {
+							if(stanza.getChildText('show') === 'available') {
+								logger.info("In presence: emitting set-active");
 								client.emit('set-active');
-							} else if(stanza.getChildText('status') === 'away') {
+							} else if(stanza.getChildText('show') === 'away') {
+								logger.info("In presence: emitting set-inactive");
 								client.emit('set-inactive');
 							}
 						}
@@ -84,7 +96,7 @@ exports.configure = function(server, config) {
 									Presence.getPresence(contact.contactJid, function(presence) {
 										if(presence.typeVal === 'unavailable') {
 											//Contact offline
-										} else {
+										} else if(presence.typeVal === 'available') {
 											logger.info("Bingo,we have online contacts for: "+client.jid.bare().toString());
 											client.send(new xmpp.Element('presence', {from: contactJidBStr,  to: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal));
 											//send initial presence	of the client to the contact
@@ -118,8 +130,8 @@ exports.configure = function(server, config) {
 			} //end of on presence
 		}); //end of on stanza
 		
-		client.on('end', function() {
-			logger.debug("In Presence: on client end");
+		client.on('close', function() {
+			logger.debug("In Presence: on client close");
 			if(!client.authenticated){
 				logger.info("Presence: Returning as client is not authenticated");
 				return;
@@ -128,10 +140,11 @@ exports.configure = function(server, config) {
 			Presence.getPresence(client.jid, function(presence) {
 				if(presence) {
 					//Storing unavailability in DB
-					presence.type = 'unavailable';
+					presence.typeVal = 'unavailable';
 					logger.info("Setting presence as unavailable");
+					logger.info(presence);
 					presence.setPresence(function(error) {
-						//TODO: Now what?
+						logger.error(error);
 					});
 					// Now we need to send a <presence type="unavailable" > on his behalf
 					logger.info("Sending unavailable presence since client is going away");
@@ -148,7 +161,7 @@ exports.configure = function(server, config) {
 									} else {
 										//send presence	of the client to the contact
 										stanza.attrs.to = contactJidBStr;
-										client.server.cluster.publish(contactJidBStr, stanza);
+										client.server.cluster.publish(contactJidBStr, stanza, function(subCount){});
 									}
 								});
 							} else {
@@ -156,6 +169,14 @@ exports.configure = function(server, config) {
 							}
 						});
 					}
+					//Now if the user was active, that is activeat == 0, then we need to set it inactive
+					client.emit('get-active-state', function(activeAt) {
+						if(activeAt == 0) {
+							client.emit('set-inactive');
+						} else {
+							//Do nothing
+						}
+					});
 				}else {
 					//Why no presence?
 				}

@@ -17,15 +17,18 @@ util.inherits(Router, EventEmitter);
 
 /**
 * Routes messages */
-Router.prototype.route = function(stanza, from) {
+Router.prototype.route = function(stanza) {
     var self = this;
     stanza.attrs.xmlns = 'jabber:client';
     if (stanza.attrs && stanza.attrs.to && (stanza.attrs.to !== this.server.options.domain)) {
         var toJid = new xmpp.JID(stanza.attrs.to);
 		//Checking if S2S required: Actually not required, as we don't give a shit
-        if(toJid.domainserver === this.server.options.domain) {
+		logger.info("In Roster.route");
+		logger.info("jid serverdomain: "+toJid.domain);
+		logger.info("server domain: "+this.server.options.domain);
+        if(toJid.domain === this.server.options.domain) {
 			logger.debug("Recepient is same domain, as will always be the case");
-			client.cluster.publish(toJid.bare().toString(), function(subCount) {
+			self.server.cluster.publish(toJid.bare().toString(), stanza, function(subCount) {
 				if(subCount == 0) {
 					//No one is subscribing to this
 					logger.debug("Emitting Recepient Offline");
@@ -90,7 +93,7 @@ exports.configure = function(server, config) {
     server.on('connect', function(client) {
 
         // When the user is offline, we remove him from the router.
-        client.on('end', function() {
+        client.on('close', function() {
             if(client.jid) {
                 // We may not have a jid just yet if the client never connected before
                 router.unregisterRoute(client.jid);
@@ -108,7 +111,7 @@ exports.configure = function(server, config) {
 						logger.debug("Privacy not allowing message sending, Message stanza: ");
 						logger.debug(stanza);
 					}else {
-						router.route(stanza, client);  // Let's send the stanza to the router and let the router decide what to do with it.
+						router.route(stanza);  // Let's send the stanza to the router and let the router decide what to do with it.
 					}
 				});
 			}

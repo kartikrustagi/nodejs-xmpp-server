@@ -2,6 +2,7 @@ var xmpp = require('node-xmpp');
 var LastActivity = require('../lib/LastActivity').LastActivity;
 var Privacy = require('../lib/Privacy').Privacy;
 var NS_LAST = 'jabber:iq:last';
+var logger = PROJECTX.logger;
 
 exports.configure = function(server, config) {
 
@@ -9,14 +10,21 @@ exports.configure = function(server, config) {
 
 
 		client.on('set-active', function() {
+			logger.info("In LastActivtity module: calling setActive");
 			LastActivity.setActive(client.jid);
 		});
 
 		client.on('set-inactive', function() {
+			logger.info("In LastActivtity module: calling setInActive");
 			LastActivity.setInActive(client.jid);
 		});
 
-		client.on('end', function() {
+		client.on('get-active-state', function(cb) {
+			logger.info("In LastActivtity module: calling getLastActiveAt");
+			LastActivity.getLastActiveAt(client.jid, cb);
+		});
+
+		client.on('close', function() {
 			client.emit('set-inactive');
 		});
 
