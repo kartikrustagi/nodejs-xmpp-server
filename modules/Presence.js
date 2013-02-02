@@ -89,25 +89,27 @@ exports.configure = function(server, config) {
 						var contactJidBStr = null;
 						for(contactJidBStr in client.roster.contacts) {
 							contact = client.roster.contacts[contactJidBStr];
-							//Checking if this contact is blocked or not either ways
-							Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
-								if(err == null) {
-									//We will check if the contact is online or not, if it is online then only will be send its last stored presence to client
-									Presence.getPresence(contact.contactJid, function(presence) {
-										if(presence.typeVal === 'unavailable') {
-											//Contact offline
-										} else if(presence.typeVal === 'available') {
-											logger.info("Bingo,we have online contacts for: "+client.jid.bare().toString());
-											client.send(new xmpp.Element('presence', {from: contactJidBStr,  to: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal));
-											//send initial presence	of the client to the contact
-											stanza.attrs.to = contactJidBStr;
-											client.server.cluster.publish(contactJidBStr, stanza, function(subCount){});
-										}
-									});
-								} else {
-									logger.info("Presence: Operation not allowed due to privacy");
-								}
-							});
+							(function(contact, contactJidBStr) {
+								//Checking if this contact is blocked or not either ways
+								Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
+									if(err == null) {
+										//We will check if the contact is online or not, if it is online then only will be send its last stored presence to client
+										Presence.getPresence(contact.contactJid, function(presence) {
+											if(presence.typeVal === 'unavailable') {
+												//Contact offline
+											} else if(presence.typeVal === 'available') {
+												logger.info("Bingo,we have online contacts for: "+client.jid.bare().toString());
+												client.send(new xmpp.Element('presence', {from: contactJidBStr,  to: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal).up());
+												//send initial presence	of the client to the contact
+												stanza.attrs.to = contactJidBStr;
+												client.server.cluster.publish(contactJidBStr, stanza, function(subCount){});
+											}
+										});
+									} else {
+										logger.info("Presence: Operation not allowed due to privacy");
+									}
+								});
+							})(contact, contactJidBStr);
 						}
 					}	
 				} else if(stanza.attrs.to && (stanza.attrs.to != client.server.options.domain)){
@@ -148,26 +150,28 @@ exports.configure = function(server, config) {
 					});
 					// Now we need to send a <presence type="unavailable" > on his behalf
 					logger.info("Sending unavailable presence since client is going away");
-					var stanza = new xmpp.Element('presence', {from: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal);
+					var stanza = new xmpp.Element('presence', {from: client.jid.bare().toString(), type : presence.typeVal}).c('show').t(presence.showVal).up().c('status').t(presence.statusVal).up().c('priority').t(presence.priorityVal).up();
 					for(contactJidBStr in client.roster.contacts) {
 						contact = client.roster.contacts[contactJidBStr];
-						//Checking if this contact is blocked or not either ways
-						Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
-							if(err == null) {
-								//We will check if the contact is online or not, if it is online then only will be send its last stored presence to client
-								Presence.getPresence(contact.contactJid, function(presence) {
-									if(presence.typeVal === 'unavailable') {
-										//Contact offline
-									} else {
-										//send presence	of the client to the contact
-										stanza.attrs.to = contactJidBStr;
-										client.server.cluster.publish(contactJidBStr, stanza, function(subCount){});
-									}
-								});
-							} else {
-								logger.info("Presence: Operation not allowed due to privacy");
-							}
-						});
+						(function(contact, contactJidBStr) {
+							//Checking if this contact is blocked or not either ways
+							Privacy.checkPrivacy(contact.contactJid, client.jid, function(err) {
+								if(err == null) {
+									//We will check if the contact is online or not, if it is online then only will be send its last stored presence to client
+									Presence.getPresence(contact.contactJid, function(presence) {
+										if(presence.typeVal === 'unavailable') {
+											//Contact offline
+										} else {
+											//send presence	of the client to the contact
+											stanza.attrs.to = contactJidBStr;
+											client.server.cluster.publish(contactJidBStr, stanza, function(subCount){});
+										}
+									});
+								} else {
+									logger.info("Presence: Operation not allowed due to privacy");
+								}
+							});
+						})(contact, contactJidBStr);
 					}
 					//Now if the user was active, that is activeat == 0, then we need to set it inactive
 					client.emit('get-active-state', function(activeAt) {
