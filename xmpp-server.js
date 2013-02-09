@@ -46,7 +46,7 @@ config.load(configFilePath, function () {
 	logger.info("Connected to DB");
 }());
 
-var server = require('./modules/server.js');
+var server = require('./modules/Server.js');
 server.run(config, function() {
 	logger.info("Server ready");
 });
