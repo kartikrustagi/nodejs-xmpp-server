@@ -45,8 +45,17 @@ exports.configure = function(server, config) {
 		client.on('stanza', function(stz) {
 			var stanza = ltx.parse(stz.toString());
 			if (stanza.is('presence')) {
+        //Check for MUC
+        if(stanza.attrs.to) {
+					  var toJid = new xmpp.JID(stanza.attrs.to);
+            if((toJid.domain === client.server.options.confDomain) && stanza.getChild('x') && (stanza.getChild('x').attrs.xmlns === "http://jabber.org/protocol/muc")) {
+                //MUC request
+                logger.info("In Presence: Room creation request");
+                client.emit('create-room', stanza);
+            }
+        }
 				// Broadcast presence
-				if (!stanza.attrs.to || (stanza.attrs.to === client.server.options.domain)) {
+        else if (!stanza.attrs.to || (stanza.attrs.to === client.server.options.domain)) {
 					// Customization: We are doing away with initial presence stanza limitation
 					//Save presence info in DB
 					if(!stanza.attrs.type) {
