@@ -37,7 +37,6 @@ exports.configure = function(server, config) {
 					//Request to get Last Activity for a JID
 					var toJid = new xmpp.JID(stanza.attrs.to);
 					var fromJid = new xmpp.JID(stanza.attrs.from);
-					console.log(stanza.toString());
 					Privacy.checkPrivacy(fromJid, toJid, function(err) {
 						if(err) {
 							var reply = new xmpp.Element('iq', 
@@ -56,7 +55,8 @@ exports.configure = function(server, config) {
 							client.send(reply);
 						}else {
 							LastActivity.getLastActiveAt(toJid, function(result) {
-								if(!result) {
+								if(result == null) {
+									console.log("ignoreing");
 									//Lets just ignore the request
 								} else {
 									var reply = new xmpp.Element('iq', 
