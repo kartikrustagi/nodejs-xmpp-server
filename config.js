@@ -9,5 +9,8 @@ module.exports = {
 
 	//XMPP server configuration
 	port: 5222,
-	domain: 'localhost'
+	domain: 'localhost',
+
+	//MUC configuration
+	muc_domain : 'muc.localhost.com'
 }

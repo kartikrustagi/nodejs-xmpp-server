@@ -37,6 +37,7 @@ exports.configure = function(server, config) {
 					//Request to get Last Activity for a JID
 					var toJid = new xmpp.JID(stanza.attrs.to);
 					var fromJid = new xmpp.JID(stanza.attrs.from);
+					console.log(stanza.toString());
 					Privacy.checkPrivacy(fromJid, toJid, function(err) {
 						if(err) {
 							var reply = new xmpp.Element('iq', 
@@ -69,7 +70,8 @@ exports.configure = function(server, config) {
 												xmlns : NS_LAST,
 												seconds : result
 											});
-									client.send(reply);
+									console.log(reply.root().toString());
+									client.send(reply.root());
 								}
 							});
 						}

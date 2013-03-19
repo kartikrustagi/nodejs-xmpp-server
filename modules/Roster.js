@@ -18,8 +18,6 @@ var logger = PROJECTX.logger;
 exports.setRoster = function(jid, client, authCb) {
 	Roster.find(jid, function(roster) {
 		client.roster = roster;
-		console.log("In Roster set roster: ");
-		console.log(client.roster);
 		authCb();
 	});
 };
@@ -33,8 +31,6 @@ exports.configure = function(server, config) {
             var stanza = ltx.parse(stz.toString());
             var query = null;
             if (stanza.is('iq') && (query = stanza.getChild('query', "jabber:iq:roster"))) {
-				console.log("In stanza roster: ");
-				console.log(client.roster);
                 if(stanza.attrs.type === "get") {
 					logger.info("Roster get request from : "+stanza.attrs.from);
                     stanza.attrs.type = "result";
@@ -59,8 +55,7 @@ exports.configure = function(server, config) {
 								resultStanza = new xmpp.Element('iq', {'to' : stanza.attrs.from, 'type' : 'error', 'id' : stanza.attrs.id});
 								resultStanza.c("error").c('text', { xmlns: "urn:ietf:params:xml:ns:xmpp-stanzas" }).t(err.message);
 							}
-							console.log("Post deleteContact roster");
-							console.log(client.roster);
+							logger.info("Post deleteContact roster");
 							client.send(resultStanza);
 						});
 					} else {
@@ -73,8 +68,7 @@ exports.configure = function(server, config) {
 								resultStanza = new xmpp.Element('iq', {'to' : stanza.attrs.from, 'type' : 'error', 'id' : stanza.attrs.id});
 								resultStanza.c("error").c('text', { xmlns: "urn:ietf:params:xml:ns:xmpp-stanzas" }).t(err.message);
 							}
-							console.log("Post addContact Roster");
-							console.log(client.roster);
+							logger.info("Post addContact Roster");
 							client.send(resultStanza);
 						});
 						

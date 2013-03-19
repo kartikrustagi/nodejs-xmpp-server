@@ -9,6 +9,7 @@ var LastActivity = require('./LastActivity');
 var Offline		= require('./Offline');
 var Privacy		= require('./Privacy');
 var GameInitiator	= require('./GameInitiator');
+var MUC = require('./MUC');
 var User = require('../lib/Users').User;
 var Cluster = require('../lib/Cluster').Cluster;
 
@@ -25,6 +26,7 @@ exports.run = function(config, ready) {
 	LastActivity.configure(server, config.lastActivity);
 	Offline.configure(server, config.offline);
 	Privacy.configure(server, config.privacy);
+	MUC.configure(server, config.muc);
 	/*
 	GameInitiator.configure(server, config.gamedata);
 	*/

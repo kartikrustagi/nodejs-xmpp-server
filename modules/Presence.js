@@ -45,17 +45,25 @@ exports.configure = function(server, config) {
 		client.on('stanza', function(stz) {
 			var stanza = ltx.parse(stz.toString());
 			if (stanza.is('presence')) {
-        //Check for MUC
-        if(stanza.attrs.to) {
-					  var toJid = new xmpp.JID(stanza.attrs.to);
-            if((toJid.domain === client.server.options.confDomain) && stanza.getChild('x') && (stanza.getChild('x').attrs.xmlns === "http://jabber.org/protocol/muc")) {
-                //MUC request
-                logger.info("In Presence: Room creation request");
-                client.emit('create-room', stanza);
-            }
-        }
+				//Check for MUC
+				logger.info("In presence module, checking for muc");
+				if(stanza.attrs.to) {
+					var toJid = new xmpp.JID(stanza.attrs.to);
+					if (toJid.domain === PROJECTX.config.muc_domain) {
+						if(stanza.attrs.type === 'unavailable') {
+							//Exiting room
+							logger.info("In Presence: Room exit request");
+							client.emit('groupchat-room-exit', stanza);
+						}
+						else if (stanza.getChild('x') && (stanza.getChild('x').attrs.xmlns === "http://jabber.org/protocol/muc")) {
+							//MUC request
+							logger.info("In Presence: Room creation/join request");
+							client.emit('create-join-room', stanza);
+						}
+					}
+				}
 				// Broadcast presence
-        else if (!stanza.attrs.to || (stanza.attrs.to === client.server.options.domain)) {
+				else if (!stanza.attrs.to || (stanza.attrs.to === client.server.options.domain)) {
 					// Customization: We are doing away with initial presence stanza limitation
 					//Save presence info in DB
 					if(!stanza.attrs.type) {
@@ -140,7 +148,7 @@ exports.configure = function(server, config) {
 				}
 			} //end of on presence
 		}); //end of on stanza
-		
+
 		client.on('close', function() {
 			logger.debug("In Presence: on client close");
 			if(!client.authenticated){
