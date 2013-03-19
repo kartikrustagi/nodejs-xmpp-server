@@ -111,7 +111,30 @@ exports.configure = function(server, config) {
 						logger.debug("Privacy not allowing message sending, Message stanza: ");
 						logger.debug(stanza);
 					}else {
-						router.route(stanza);  // Let's send the stanza to the router and let the router decide what to do with it.
+						//Check if for MUC
+						if( (stanza.attrs.type && (stanza.attrs.type === 'groupchat')) || (stanza.attrs.to && ((new xmpp.JID(stanza.attrs.to)).domain === client.server.options.confDomain)) ) {
+							//MUC subject change or message
+							client.emit('groupchat-message-subject', stanza);
+						} else if(stanza.getChild('x') && stanza.getChild('x').getChild('invite')) {
+							client.emit('groupchat-invite', stanza, function(error, inviterJid, groupJid, inviteeJid, memberJidBStrs) {
+								if (error == null) {
+									logger.info('In Router module, groupchat invite successful');
+									logger.info("Membership list modified");
+									//Modify stanza for forwarding
+									stanza.attrs.to = inviteeJid.bare().toString();
+									stanza.attrs.from = groupJid.bare().toString();
+									delete stanza.getChild('x').getChild('invite').attrs.to;
+									stanza.getChild('x').getChild('invite').attrs.from = inviterJid.toString();
+									router.route(stanza);
+									//Inform members of the new participant
+									client.emit('groupchat-new-member-notification', groupJid, inviteeJid, memberJidBStrs);
+								} else {
+									logger.error('In Router module, groupchat invite failed');
+								}
+							});
+						} else {
+							router.route(stanza);  // Let's send the stanza to the router and let the router decide what to do with it.
+						}
 					}
 				});
 			}

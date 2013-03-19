@@ -1,4 +1,5 @@
 .npmignore
+*.log
 .travis.yml
 node_modules/*
 tags
