@@ -106,6 +106,9 @@ exports.configure = function(server, config) {
 			var presence = new xmpp.Element('presence', {from : (muc.groupJid.bare().toString()+"/"+memberJid.bare().toString()), id : 'notification', to : memberJid.bare().toString()}).c('x', {xmlns : 'http://jabber.org/protocol/muc#user'}).c('item', {affiliation : affiliation, role : role}).root(); 
 			client.server.cluster.publish(memberJid.bare().toString(), presence, function(subCount){});
 
+			//All notifications sent. Lets send offline messages
+			client.emit("groupchat-offline-messages", muc.groupJid);
+
 		});
 
 		client.on('stanza', function(stanza) {
@@ -119,8 +122,6 @@ exports.configure = function(server, config) {
 						client.send(new xmpp.Element('iq', {from : toJid.toString(), id : stanza.attrs.id, to : client.jid.toString(), type : 'result' }));
 						//Not doing anything
 					} else if ((stanza.attrs.type && (stanza.attrs.type === 'get')) && (stanza.getChild('query'))) {
-						console.log('here');
-						console.log(stanza.getChild('query').attrs.xmlns);
 						if (stanza.getChild('query').attrs.xmlns === 'http://jabber.org/protocol/disco#info') {
 								//IMHO it is asking for room info
 								logger.info('IMHO it is asking for room info');
@@ -184,7 +185,6 @@ exports.configure = function(server, config) {
 					var aff = 'member';
 					var role = 'participant';
 					var memberJidBStr = null;
-					console.log('here');
 					for (index in muc.memberJidBStrs) {
 						aff = 'member';
 						role = 'participant';
@@ -269,7 +269,16 @@ exports.configure = function(server, config) {
 					if ((toSelf) || (memberJidBStr != originJid.bare().toString())) {
 						var newStanza = clone(stanza);
 						newStanza.attrs.to = memberJidBStr;
-						client.server.cluster.publish(memberJidBStr, newStanza, function(subCount){});
+						client.server.cluster.publish(memberJidBStr, newStanza, function(subCount){
+							if(subCount == 0) {
+								//No one is subscribing to this
+								logger.debug("Emitting Recepient Offline");
+								client.server.router.emit("recipientOfflineGroupchat", stanza, groupJid);
+							} else {
+								//Some on subscribing to it received the message, job done
+							}
+
+						});
 					}
 				}
 			});

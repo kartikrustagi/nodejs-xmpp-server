@@ -56,7 +56,6 @@ exports.configure = function(server, config) {
 						}else {
 							LastActivity.getLastActiveAt(toJid, function(result) {
 								if(result == null) {
-									console.log("ignoreing");
 									//Lets just ignore the request
 								} else {
 									var reply = new xmpp.Element('iq', 
@@ -70,7 +69,6 @@ exports.configure = function(server, config) {
 												xmlns : NS_LAST,
 												seconds : result
 											});
-									console.log(reply.root().toString());
 									client.send(reply.root());
 								}
 							});
